@@ -1,65 +1,134 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { readdirSync } from 'fs'
+import { join, extname } from 'path'
+import { createClient } from '@/lib/supabase/server'
+import { AddressSearch } from '@/components/address-search'
+import { SlideshowHero } from '@/components/slideshow-hero'
+import { ChevronDown } from 'lucide-react'
 
-export default function Home() {
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif'])
+
+function getSlideshowImages(): string[] {
+  const dir = join(process.cwd(), 'public', 'slideshow')
+  return readdirSync(dir)
+    .filter((f) => IMAGE_EXTS.has(extname(f).toLowerCase()))
+    .map((f) => `/slideshow/${encodeURIComponent(f)}`)
+}
+
+const HOW_IT_WORKS = [
+  {
+    step: '1',
+    label: 'Enter your address',
+    desc: 'We pull your 2025 county assessment data instantly — no account needed to start.',
+  },
+  {
+    step: '2',
+    label: 'Walk through your home',
+    desc: 'Our assistant asks about conditions, defects, and repairs. Every scratch on those countertops is money back in your pocket.',
+  },
+  {
+    step: '3',
+    label: 'Download your packet',
+    desc: 'A formatted evidence packet and protest letter, ready to file with the ARB. One flat fee of $69.',
+  },
+]
+
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const slides = getSlideshowImages()
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main>
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <section className="relative min-h-dvh flex items-center justify-center bg-espresso">
+        {/* Background slideshow */}
+        <SlideshowHero slides={slides} />
+
+        {/* Scrim — lifts the card off the image without killing it */}
+        <div className="absolute inset-0 z-10 bg-foreground/30" />
+
+        {/* Floating glass card */}
+        <div className="relative z-20 w-full max-w-[460px] mx-auto px-4 py-16">
+          <div className="glass-card rounded-2xl shadow-editorial-hover px-8 py-10 space-y-7">
+
+            {/* Wordmark + headline */}
+            <div className="text-center space-y-3">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                FairValue
+              </p>
+              <h1 className="font-heading text-[2rem] leading-tight text-foreground">
+                Counties assess your home<br />
+                <em>based on a perfect world.</em>
+              </h1>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We help you show them the real one.
+              </p>
+            </div>
+
+            {/* Address search */}
+            <AddressSearch />
+
+            {/* Footer row */}
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Dallas · Collin · Tarrant</span>
+              {user ? (
+                <Link href="/dashboard" className="text-primary font-medium hover:underline transition-colors">
+                  My Protests →
+                </Link>
+              ) : (
+                <Link href="/login" className="text-primary font-medium hover:underline transition-colors">
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <a
+          href="#how-it-works"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 text-white/60 hover:text-white/90 transition-colors"
+        >
+          <span className="text-xs font-medium uppercase tracking-[0.18em]">How it works</span>
+          <ChevronDown className="h-4 w-4 animate-bounce" />
+        </a>
+      </section>
+
+      {/* ── How it works ─────────────────────────────────── */}
+      <section id="how-it-works" className="bg-background px-6 py-20 md:py-28">
+        <div className="max-w-lg mx-auto space-y-14">
+
+          {/* Section header */}
+          <div className="space-y-4">
+            <div className="w-8 h-px bg-espresso" />
+            <h2 className="font-heading text-2xl text-foreground">How it works</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              From your front door to the appeals board, in one afternoon.
+            </p>
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-10">
+            {HOW_IT_WORKS.map(({ step, label, desc }) => (
+              <div key={step} className="flex gap-6 items-start">
+                <span className="font-heading italic text-primary text-4xl leading-none shrink-0 w-8 select-none">
+                  {step}
+                </span>
+                <div className="space-y-1 pt-1.5">
+                  <p className="font-medium text-foreground">{label}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footnote */}
+          <p className="text-xs text-muted-foreground/60 pt-4 border-t border-border">
+            FairValue covers Dallas, Collin &amp; Tarrant counties · $69 one-time · No account needed to start
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      </section>
+    </main>
+  )
 }

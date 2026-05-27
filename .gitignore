@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code session memory
+/memory
+
+# raw county data files (large, import-only)
+/scripts/data/
