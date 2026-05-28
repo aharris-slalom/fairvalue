@@ -109,7 +109,7 @@ export async function generateEvidencePacket(
   const { data: protest } = await supabase
     .from('protests')
     .select(`
-      id, argument_type, target_protest_value, estimated_savings,
+      id, argument_type, target_protest_value, estimated_savings, audit_narrative,
       properties (
         id, county_account_number, county_name, street_address, zip_code,
         owner_name, year_built, total_living_area_sqft, current_proposed_value
@@ -194,6 +194,7 @@ export async function generateEvidencePacket(
   const targetValue = protest.target_protest_value ?? Math.max(equityTarget - deficitTotal, 0)
   const estimatedSavings = protest.estimated_savings ?? 0
   const argumentType = (protest.argument_type ?? 'both') as 'market_value' | 'equity' | 'both'
+  const auditNarrative = (protest as unknown as { audit_narrative: string | null }).audit_narrative ?? null
 
   const preparedDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -223,6 +224,7 @@ export async function generateEvidencePacket(
       argumentType,
       taxYear: '2025',
       ownerName: prop.owner_name,
+      auditNarrative,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any
   )

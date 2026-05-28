@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import type { PropertyData, Deficit } from '@/lib/store/protest-store'
 import { useProtestStore } from '@/lib/store/protest-store'
 import { lockProtestValue } from '@/lib/actions/computation'
+import { saveAuditNarrative } from '@/lib/actions/narrative'
 import { createClient } from '@/lib/supabase/client'
 import { ChatBubble } from './chat-bubble'
 import { DeficitCard } from './deficit-card'
@@ -59,13 +60,31 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
   const setPhase = useProtestStore((s) => s.setPhase)
   const deficits = useProtestStore((s) => s.deficits)
 
+  function buildTranscript(): string {
+    return messages
+      .map((msg) => {
+        const textPart = msg.parts.find((p) => p.type === 'text') as
+          | { type: 'text'; text: string }
+          | undefined
+        if (!textPart?.text) return null
+        const label = (msg.role as string) === 'user' ? 'Homeowner' : 'Auditor'
+        return `[${label}]: ${textPart.text}`
+      })
+      .filter(Boolean)
+      .join('\n\n')
+  }
+
   async function handleFinishAudit() {
     setLocking(true)
     try {
       if (previewMode && onPreviewFinish) {
         await onPreviewFinish(deficits)
       } else if (protestId) {
-        const result = await lockProtestValue(protestId)
+        const transcript = buildTranscript()
+        const [result] = await Promise.all([
+          lockProtestValue(protestId),
+          transcript ? saveAuditNarrative(protestId, transcript) : Promise.resolve({ narrative: undefined }),
+        ])
         if (result.error) {
           toast.error('Could not compute protest value. Please try again.')
           console.error('[finish audit]', result.error)

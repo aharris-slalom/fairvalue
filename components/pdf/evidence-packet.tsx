@@ -144,6 +144,21 @@ const s = StyleSheet.create({
   totalLabel: { flex: 1, fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.navy },
   totalVal:   { fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.red, textAlign: 'right' },
 
+  // ── OWNER'S STATEMENT ───────────────────────────────────────────────────────
+  stmtMeta:       { flexDirection: 'row', marginBottom: 16 },
+  stmtMetaCol:    { flex: 1 },
+  stmtMetaLabel:  { fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 2 },
+  stmtMetaVal:    { fontSize: 8.5, color: C.text },
+  stmtBody:       { fontSize: 9.5, color: C.text, lineHeight: 1.65, marginBottom: 20 },
+  stmtSigBlock:   { marginTop: 'auto' as unknown as number },
+  stmtSigRow:     { flexDirection: 'row', gap: 40, marginBottom: 20 },
+  stmtSigLine:    { width: 180, height: 1, backgroundColor: C.text, marginTop: 28, marginBottom: 3 },
+  stmtSigLabel:   { fontSize: 7.5, color: C.muted },
+  stmtNotary:     { borderWidth: 1, borderColor: C.border, borderRadius: 3, padding: 12, marginTop: 16 },
+  stmtNotaryTitle:{ fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  stmtNotaryLine: { height: 1, backgroundColor: C.border, marginBottom: 10 },
+  stmtNotaryText: { fontSize: 7.5, color: C.muted, lineHeight: 1.5 },
+
   // ── PAGE FOOTER (non-absolute) ───────────────────────────────────────────────
   pageFooter:     { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 7, marginTop: 'auto' },
   pageFooterText: { fontSize: 7, color: C.muted },
@@ -219,6 +234,7 @@ interface Props {
   preparedDate: string
   argumentType: ArgumentType
   taxYear: string
+  auditNarrative?: string | null
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -226,7 +242,7 @@ export function EvidencePacket({
   address, countyAccountNumber, countyName, ownerName, yearBuilt,
   sqft, currentValue, equityTarget, deficitTotal, targetValue,
   estimatedSavings, compCount, comps, deficits, photos,
-  preparedDate, argumentType, taxYear,
+  preparedDate, argumentType, taxYear, auditNarrative,
 }: Props) {
   const district = `${capFirst(countyName)} Central Appraisal District`
   const grounds  = groundsLines(argumentType)
@@ -550,6 +566,84 @@ export function EvidencePacket({
           <Text style={s.pageFooterText}>FairValue · {address} · Tax Year {taxYear}</Text>
         </View>
       </Page>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          SECTION 4 — OWNER'S STATEMENT OF PROPERTY CONDITION
+          Only rendered when auditNarrative is present.
+      ══════════════════════════════════════════════════════════════════ */}
+      {auditNarrative && (
+        <Page size="LETTER" style={s.letterPage}>
+
+          {/* Header */}
+          <View style={s.letterHeader}>
+            <View>
+              <Text style={s.letterLogo}>FairValue</Text>
+              <Text style={s.letterTagline}>Texas Property Tax Protest Service</Text>
+            </View>
+            <Text style={s.letterDate}>{preparedDate}</Text>
+          </View>
+
+          <Text style={s.letterTitle}>Owner's Statement of Property Condition</Text>
+          <Text style={s.letterSub}>Section 4 — Sworn Declaration in Support of Protest</Text>
+          <View style={s.divider} />
+
+          {/* Property meta */}
+          <View style={s.stmtMeta}>
+            <View style={s.stmtMetaCol}>
+              <Text style={s.stmtMetaLabel}>Property Address</Text>
+              <Text style={s.stmtMetaVal}>{address}</Text>
+            </View>
+            <View style={s.stmtMetaCol}>
+              <Text style={s.stmtMetaLabel}>Account Number</Text>
+              <Text style={s.stmtMetaVal}>{countyAccountNumber}</Text>
+            </View>
+            <View style={s.stmtMetaCol}>
+              <Text style={s.stmtMetaLabel}>Tax Year</Text>
+              <Text style={s.stmtMetaVal}>{taxYear}</Text>
+            </View>
+          </View>
+
+          {/* Narrative body */}
+          <Text style={s.stmtBody}>{auditNarrative}</Text>
+
+          {/* Signature block */}
+          <View style={s.stmtSigBlock}>
+            <View style={s.stmtSigRow}>
+              <View>
+                <View style={s.stmtSigLine} />
+                <Text style={s.stmtSigLabel}>
+                  {ownerName ? ownerName : 'Property Owner'} — Signature
+                </Text>
+              </View>
+              <View>
+                <View style={s.stmtSigLine} />
+                <Text style={s.stmtSigLabel}>Date</Text>
+              </View>
+            </View>
+
+            {/* Notary block */}
+            <View style={s.stmtNotary}>
+              <Text style={s.stmtNotaryTitle}>Notary Acknowledgment (optional — strengthens the record)</Text>
+              <View style={s.stmtNotaryLine} />
+              <Text style={s.stmtNotaryText}>
+                State of Texas, County of ______________________{'\n'}
+                Subscribed and sworn to before me on __________________ by ____________________________,
+                who is personally known to me or proved to me on the basis of satisfactory evidence to be the
+                person whose name is subscribed to the within instrument.
+              </Text>
+              <View style={[s.stmtSigLine, { marginTop: 20 }]} />
+              <Text style={s.stmtSigLabel}>Notary Public — Signature &amp; Seal</Text>
+            </View>
+          </View>
+
+          {/* Footer */}
+          <View style={s.letterFooter}>
+            <Text style={s.letterFooterText}>
+              Prepared by FairValue · {preparedDate} · {address} · Tax Year {taxYear}
+            </Text>
+          </View>
+        </Page>
+      )}
 
     </Document>
   )
