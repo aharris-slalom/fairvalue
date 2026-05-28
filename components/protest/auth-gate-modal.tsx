@@ -95,7 +95,8 @@ export function AuthGateModal({ propertyId, argumentType, deficits, onComplete, 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60">
+      <div className="flex min-h-full items-center justify-center px-4 py-4">
       <div
         role="dialog"
         aria-modal="true"
@@ -316,6 +317,7 @@ export function AuthGateModal({ propertyId, argumentType, deficits, onComplete, 
             </button>
           </>
         )}
+      </div>
       </div>
     </div>
   )
