@@ -29,10 +29,11 @@ export async function updateSession(request: NextRequest) {
   try {
     const { data: { user: authUser } } = await Promise.race([
       supabase.auth.getUser(),
-      new Promise((_, reject) => 
+      new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Auth timeout')), 5000)
       )
     ]);
+
     user = authUser;
   } catch (err) {
     console.error('Auth middleware error:', err instanceof Error ? err.message : 'Unknown error');
