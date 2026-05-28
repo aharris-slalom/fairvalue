@@ -210,7 +210,7 @@ export function Phase4Preview({ protestId: _protestId, property, isProcessing, p
 
           {/* Mock checkout modal — authenticated mode */}
           {showCheckout && (
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-4 py-4 overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-4 overflow-y-auto">
               <div
                 role="dialog"
                 aria-modal="true"

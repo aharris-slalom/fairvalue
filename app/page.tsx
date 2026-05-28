@@ -1,19 +1,9 @@
 import Link from 'next/link'
-import { readdirSync } from 'fs'
-import { join, extname } from 'path'
 import { createClient } from '@/lib/supabase/server'
 import { AddressSearch } from '@/components/address-search'
 import { SlideshowHero } from '@/components/slideshow-hero'
 import { ChevronDown } from 'lucide-react'
-
-const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif'])
-
-function getSlideshowImages(): string[] {
-  const dir = join(process.cwd(), 'public', 'slideshow')
-  return readdirSync(dir)
-    .filter((f) => IMAGE_EXTS.has(extname(f).toLowerCase()))
-    .map((f) => `/slideshow/${encodeURIComponent(f)}`)
-}
+import { SLIDESHOW_IMAGES } from '@/lib/slideshow'
 
 const HOW_IT_WORKS = [
   {
@@ -36,7 +26,7 @@ const HOW_IT_WORKS = [
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const slides = getSlideshowImages()
+  const slides = SLIDESHOW_IMAGES
 
   return (
     <main>

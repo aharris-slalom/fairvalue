@@ -45,8 +45,8 @@ export function Phase5Delivery({ protestId: _protestId }: Props) {
       {/* Download card */}
       <div className="rounded-2xl bg-card shadow-editorial p-5 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-espresso/10 flex items-center justify-center shrink-0">
-            <FileDown className="h-5 w-5 text-espresso" />
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <FileDown className="h-5 w-5 text-primary" />
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Protest Packet (PDF)</p>
@@ -60,7 +60,7 @@ export function Phase5Delivery({ protestId: _protestId }: Props) {
             href={pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-espresso text-primary-foreground py-2.5 text-sm font-semibold hover:bg-espresso/90 active:scale-[0.97] transition-all duration-200 ease-out"
+            className="flex items-center justify-center gap-2 w-full rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 ease-out"
           >
             <FileDown className="h-4 w-4" />
             Download Protest Packet
