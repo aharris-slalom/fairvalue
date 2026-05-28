@@ -1,7 +1,7 @@
 export const maxDuration = 60
 
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai'
-import { groq } from '@ai-sdk/groq'
+import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
@@ -78,8 +78,14 @@ export async function POST(request: Request) {
 
   try {
     const result = streamText({
-      model: groq('llama-3.3-70b-versatile'),
-      system: systemPrompt,
+      model: anthropic('claude-sonnet-4-6'),
+      system: {
+        role: 'system',
+        content: systemPrompt,
+        providerOptions: {
+          anthropic: { cacheControl: { type: 'ephemeral' } },
+        },
+      },
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 500,
       stopWhen: stepCountIs(20),
