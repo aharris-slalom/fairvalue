@@ -67,7 +67,7 @@ export function PhotoUpload({ deficitId, userId, protestId }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
         className="hidden"
         onChange={handleFile}
         disabled={uploading}

@@ -61,7 +61,7 @@ export function DeficitCard({
           <input
             ref={previewInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
