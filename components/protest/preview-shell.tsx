@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useProtestStore } from '@/lib/store/protest-store'
-import type { PropertyData } from '@/lib/store/protest-store'
+import type { PropertyData, Deficit } from '@/lib/store/protest-store'
 import { previewEquityTarget } from '@/lib/actions/preview'
 import { Phase2Argument } from './phase-2-argument'
 import { Phase3Audit } from './phase-3-audit'
@@ -38,6 +38,7 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
   const [phase, setPhase] = useState<PreviewPhase>(2)
   const [showIntro, setShowIntro] = useState(true)
   const [showAuthGate, setShowAuthGate] = useState(false)
+  const [pendingDeficits, setPendingDeficits] = useState<Deficit[]>([])
   const [auditTranscript, setAuditTranscript] = useState('')
   const [previewPhotosByPreviewId, setPreviewPhotosByPreviewId] = useState<Record<string, string[]>>({})
 
@@ -46,14 +47,14 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
   const setTargetValue = useProtestStore((s) => s.setTargetValue)
   const setPdfUrl = useProtestStore((s) => s.setPdfUrl)
   const argumentType = useProtestStore((s) => s.argumentType)
-  const deficits = useProtestStore((s) => s.deficits)
   const storeProperty = useProtestStore((s) => s.property)
 
   useEffect(() => {
     init('preview', property, 2, null)
   }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handlePreviewFinish(currentDeficits: typeof deficits, transcript: string, photosByPreviewId: Record<string, string[]>) {
+  async function handlePreviewFinish(currentDeficits: Deficit[], transcript: string, photosByPreviewId: Record<string, string[]>) {
+    setPendingDeficits(currentDeficits)
     setAuditTranscript(transcript)
     setPreviewPhotosByPreviewId(photosByPreviewId)
     const sqft = storeProperty?.total_living_area_sqft ?? property.total_living_area_sqft
@@ -203,7 +204,7 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
         <AuthGateModal
           propertyId={property.id}
           argumentType={argumentType ?? 'equity'}
-          deficits={deficits}
+          deficits={pendingDeficits}
           transcript={auditTranscript}
           previewPhotosByPreviewId={previewPhotosByPreviewId}
           onComplete={handleAuthComplete}
