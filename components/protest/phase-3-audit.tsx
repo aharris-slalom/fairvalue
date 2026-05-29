@@ -28,9 +28,14 @@ interface DeficitToolInput {
 interface ToolPart {
   type: string
   toolCallId: string
+  toolName?: string   // present on dynamic-tool parts
   state: string
   input?: DeficitToolInput
   output?: DeficitToolOutput
+}
+
+function isLogDeficitPart(p: ToolPart): boolean {
+  return p.type === 'tool-log_deficit' || (p.type === 'dynamic-tool' && p.toolName === 'log_deficit')
 }
 
 interface Props {
@@ -74,11 +79,36 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
       .join('\n\n')
   }
 
+  // Extract logged deficits directly from the messages array. This is the
+  // source of truth in preview mode (deficits aren't written to DB until claim).
+  function extractDeficitsFromMessages(): Deficit[] {
+    const seen = new Set<string>()
+    const result: Deficit[] = []
+    for (const msg of messages) {
+      for (const part of msg.parts) {
+        const p = part as unknown as ToolPart
+        if (!isLogDeficitPart(p)) continue
+        if (p.state !== 'output-available') continue
+        if (!p.output?.success || !p.output.deficitId) continue
+        if (seen.has(p.output.deficitId)) continue
+        seen.add(p.output.deficitId)
+        result.push({
+          id: p.output.deficitId,
+          category: p.input?.category ?? '',
+          user_description: p.input?.user_description ?? '',
+          estimated_cost_to_cure: p.input?.estimated_cost_to_cure ?? 0,
+        })
+      }
+    }
+    return result
+  }
+
   async function handleFinishAudit() {
     setLocking(true)
     try {
       if (previewMode && onPreviewFinish) {
-        await onPreviewFinish(deficits)
+        const extracted = extractDeficitsFromMessages()
+        await onPreviewFinish(extracted)
       } else if (protestId) {
         const transcript = buildTranscript()
         const [result] = await Promise.all([
@@ -183,11 +213,9 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
     for (let i = messages.length - 1; i >= 0; i--) {
       for (const part of messages[i].parts) {
         const p = part as unknown as ToolPart
-        if (p.type === 'tool-log_deficit' || p.type === 'dynamic-tool') {
-          if (p.output?.success && p.output.deficitId) {
-            setLastDeficitId(p.output.deficitId)
-            return
-          }
+        if (isLogDeficitPart(p) && p.output?.success && p.output.deficitId) {
+          setLastDeficitId(p.output.deficitId)
+          return
         }
       }
     }
@@ -197,8 +225,10 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
   useEffect(() => {
     for (const msg of messages) {
       for (const part of msg.parts) {
-        const p = part as unknown as { type: string; output?: { success?: boolean } }
-        if (p.type === 'tool-signal_audit_complete' && p.output?.success) {
+        const p = part as unknown as ToolPart
+        const isSignal = p.type === 'tool-signal_audit_complete' ||
+          (p.type === 'dynamic-tool' && p.toolName === 'signal_audit_complete')
+        if (isSignal && p.output?.success) {
           setAuditComplete(true)
           return
         }
@@ -305,7 +335,12 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
                 )
               }
 
-              if (part.type === 'tool-log_deficit' || part.type === 'dynamic-tool') {
+              // Debug: log actual part types so we can verify the type check below
+              if (part.type !== 'text' && part.type !== 'step-start') {
+                console.log('[phase3] part type:', part.type, (part as unknown as ToolPart).toolName ?? '')
+              }
+
+              if (isLogDeficitPart(part as unknown as ToolPart)) {
                 const toolPart = part as unknown as ToolPart
                 if (!toolPart.input) return null
 
@@ -339,7 +374,9 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
                 )
               }
 
-              if (part.type === 'tool-signal_audit_complete') {
+              const isSignalComplete = part.type === 'tool-signal_audit_complete' ||
+                (part.type === 'dynamic-tool' && (part as unknown as ToolPart).toolName === 'signal_audit_complete')
+              if (isSignalComplete) {
                 const p = part as unknown as { state: string; output?: { success?: boolean; total_deficits_logged?: number } }
                 if (p.state !== 'output-available' || !p.output?.success) return null
                 return (
