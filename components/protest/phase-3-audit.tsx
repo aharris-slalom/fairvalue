@@ -44,7 +44,7 @@ interface Props {
   userId?: string
   existingDeficits?: Deficit[]
   previewMode?: { propertyId: string; argumentType: string | null }
-  onPreviewFinish?: (deficits: Deficit[], transcript: string) => Promise<void>
+  onPreviewFinish?: (deficits: Deficit[], transcript: string, photosByPreviewId: Record<string, string[]>) => Promise<void>
 }
 
 export function Phase3Audit({ protestId, property, userId, existingDeficits = [], previewMode, onPreviewFinish }: Props) {
@@ -54,8 +54,10 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
   const [auditComplete, setAuditComplete] = useState(false)
   const [lastDeficitId, setLastDeficitId] = useState<string | null>(null)
   const [attachingPhoto, setAttachingPhoto] = useState(false)
-  // Preview mode only: stores object URLs for locally-captured photos, keyed by deficit ID
+  // Preview mode only: blob URLs for display, keyed by preview deficit ID
   const [previewPhotos, setPreviewPhotos] = useState<Map<string, string[]>>(new Map())
+  // Preview mode only: Supabase storage paths, keyed by preview deficit ID
+  const [previewPhotoStoragePaths, setPreviewPhotoStoragePaths] = useState<Map<string, string[]>>(new Map())
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const inlinePhotoRef = useRef<HTMLInputElement>(null)
@@ -108,7 +110,11 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
     try {
       if (previewMode && onPreviewFinish) {
         const extracted = extractDeficitsFromMessages()
-        await onPreviewFinish(extracted, buildTranscript())
+        const photosByPreviewId: Record<string, string[]> = {}
+        for (const [id, paths] of previewPhotoStoragePaths.entries()) {
+          photosByPreviewId[id] = paths
+        }
+        await onPreviewFinish(extracted, buildTranscript(), photosByPreviewId)
       } else if (protestId) {
         const transcript = buildTranscript()
         const [result] = await Promise.all([
@@ -236,13 +242,32 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
     }
   }, [messages])
 
-  function addPreviewPhoto(deficitId: string, file: File) {
+  async function addPreviewPhoto(deficitId: string, file: File) {
+    // Show immediately via blob URL
     const url = URL.createObjectURL(file)
     setPreviewPhotos((prev) => {
       const next = new Map(prev)
       next.set(deficitId, [...(next.get(deficitId) ?? []), url])
       return next
     })
+
+    // Upload to temp Supabase storage in the background
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('propertyId', previewMode!.propertyId)
+      const res = await fetch('/api/upload-preview-photo', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (json.storagePath) {
+        setPreviewPhotoStoragePaths((prev) => {
+          const next = new Map(prev)
+          next.set(deficitId, [...(next.get(deficitId) ?? []), json.storagePath])
+          return next
+        })
+      }
+    } catch {
+      // Photo still shows locally; it just won't appear in the PDF
+    }
   }
 
   const handleSubmit = useCallback((e?: React.FormEvent) => {

@@ -11,6 +11,7 @@ interface Props {
   argumentType: ArgumentType
   deficits: Deficit[]
   transcript?: string
+  previewPhotosByPreviewId?: Record<string, string[]>
   onComplete: (pdfUrl: string) => void
   onClose: () => void
 }
@@ -18,7 +19,7 @@ interface Props {
 type Step = 'auth' | 'payment' | 'claiming' | 'done'
 type AuthMode = 'signup' | 'signin'
 
-export function AuthGateModal({ propertyId, argumentType, deficits, transcript, onComplete, onClose }: Props) {
+export function AuthGateModal({ propertyId, argumentType, deficits, transcript, previewPhotosByPreviewId, onComplete, onClose }: Props) {
   const [mode, setMode] = useState<AuthMode>('signup')
   const [step, setStep] = useState<Step>('auth')
   const [statusText, setStatusText] = useState('')
@@ -33,6 +34,7 @@ export function AuthGateModal({ propertyId, argumentType, deficits, transcript, 
   const supabase = createClient()
 
   const deficitPayload = deficits.map((d) => ({
+    previewId: d.id,
     category: d.category,
     user_description: d.user_description,
     estimated_cost_to_cure: d.estimated_cost_to_cure,
@@ -41,7 +43,7 @@ export function AuthGateModal({ propertyId, argumentType, deficits, transcript, 
   async function claimSession() {
     setStep('claiming')
     setStatusText('Saving your audit…')
-    const result = await claimPreviewSession(propertyId, argumentType, deficitPayload, transcript)
+    const result = await claimPreviewSession(propertyId, argumentType, deficitPayload, transcript, previewPhotosByPreviewId)
     if ('error' in result) {
       setStep('payment')
       setError(result.error ?? 'An error occurred')

@@ -99,8 +99,9 @@ export interface ClaimResult {
 export async function claimPreviewSession(
   propertyId: string,
   argumentType: ArgumentType,
-  deficits: Array<{ category: string; user_description: string; estimated_cost_to_cure: number }>,
-  transcript?: string
+  deficits: Array<{ previewId?: string; category: string; user_description: string; estimated_cost_to_cure: number }>,
+  transcript?: string,
+  previewPhotosByPreviewId?: Record<string, string[]>
 ): Promise<ClaimResult | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -115,11 +116,30 @@ export async function claimPreviewSession(
 
   if (protestError || !protest) return { error: protestError?.message ?? 'failed to create protest' }
 
-  // Save deficits
+  // Save deficits (return IDs for photo attachment mapping)
+  let insertedDeficitIds: string[] = []
   if (deficits.length > 0) {
-    await supabaseAdmin.from('property_deficits').insert(
-      deficits.map((d) => ({ protest_id: protest.id, ...d }))
-    )
+    const { data: inserted } = await supabaseAdmin
+      .from('property_deficits')
+      .insert(deficits.map(({ previewId: _previewId, ...d }) => ({ protest_id: protest.id, ...d })))
+      .select('id')
+    insertedDeficitIds = inserted?.map((r) => r.id) ?? []
+  }
+
+  // Create evidence_attachments for photos uploaded during preview
+  if (previewPhotosByPreviewId && insertedDeficitIds.length > 0) {
+    const attachments: { deficit_id: string; storage_path: string; attachment_type: string }[] = []
+    for (let i = 0; i < deficits.length; i++) {
+      const previewId = deficits[i].previewId
+      const realId = insertedDeficitIds[i]
+      if (!previewId || !realId) continue
+      for (const storagePath of previewPhotosByPreviewId[previewId] ?? []) {
+        attachments.push({ deficit_id: realId, storage_path: storagePath, attachment_type: 'photo' })
+      }
+    }
+    if (attachments.length > 0) {
+      await supabaseAdmin.from('evidence_attachments').insert(attachments)
+    }
   }
 
   // Run computation + narrative in parallel
