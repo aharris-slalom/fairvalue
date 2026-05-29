@@ -44,7 +44,7 @@ interface Props {
   userId?: string
   existingDeficits?: Deficit[]
   previewMode?: { propertyId: string; argumentType: string | null }
-  onPreviewFinish?: (deficits: Deficit[]) => Promise<void>
+  onPreviewFinish?: (deficits: Deficit[], transcript: string) => Promise<void>
 }
 
 export function Phase3Audit({ protestId, property, userId, existingDeficits = [], previewMode, onPreviewFinish }: Props) {
@@ -108,7 +108,7 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
     try {
       if (previewMode && onPreviewFinish) {
         const extracted = extractDeficitsFromMessages()
-        await onPreviewFinish(extracted)
+        await onPreviewFinish(extracted, buildTranscript())
       } else if (protestId) {
         const transcript = buildTranscript()
         const [result] = await Promise.all([
@@ -333,11 +333,6 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
                     content={part.text}
                   />
                 )
-              }
-
-              // Debug: log actual part types so we can verify the type check below
-              if (part.type !== 'text' && part.type !== 'step-start') {
-                console.log('[phase3] part type:', part.type, (part as unknown as ToolPart).toolName ?? '')
               }
 
               if (isLogDeficitPart(part as unknown as ToolPart)) {

@@ -10,6 +10,7 @@ interface Props {
   propertyId: string
   argumentType: ArgumentType
   deficits: Deficit[]
+  transcript?: string
   onComplete: (pdfUrl: string) => void
   onClose: () => void
 }
@@ -17,7 +18,7 @@ interface Props {
 type Step = 'auth' | 'payment' | 'claiming' | 'done'
 type AuthMode = 'signup' | 'signin'
 
-export function AuthGateModal({ propertyId, argumentType, deficits, onComplete, onClose }: Props) {
+export function AuthGateModal({ propertyId, argumentType, deficits, transcript, onComplete, onClose }: Props) {
   const [mode, setMode] = useState<AuthMode>('signup')
   const [step, setStep] = useState<Step>('auth')
   const [statusText, setStatusText] = useState('')
@@ -40,7 +41,7 @@ export function AuthGateModal({ propertyId, argumentType, deficits, onComplete, 
   async function claimSession() {
     setStep('claiming')
     setStatusText('Saving your audit…')
-    const result = await claimPreviewSession(propertyId, argumentType, deficitPayload)
+    const result = await claimPreviewSession(propertyId, argumentType, deficitPayload, transcript)
     if ('error' in result) {
       setStep('payment')
       setError(result.error ?? 'An error occurred')

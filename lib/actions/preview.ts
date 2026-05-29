@@ -6,6 +6,7 @@ import { COUNTY_TAX_RATES } from '@/config/tax-rates'
 import type { ArgumentType } from '@/lib/store/protest-store'
 import { lockProtestValue } from './computation'
 import { generateEvidencePacket } from './generate-pdf'
+import { saveAuditNarrative } from './narrative'
 
 const supabaseAdmin = createAdminClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -98,7 +99,8 @@ export interface ClaimResult {
 export async function claimPreviewSession(
   propertyId: string,
   argumentType: ArgumentType,
-  deficits: Array<{ category: string; user_description: string; estimated_cost_to_cure: number }>
+  deficits: Array<{ category: string; user_description: string; estimated_cost_to_cure: number }>,
+  transcript?: string
 ): Promise<ClaimResult | { error: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -120,8 +122,11 @@ export async function claimPreviewSession(
     )
   }
 
-  // Run computation (sets target value + status = payment_pending)
-  const computation = await lockProtestValue(protest.id)
+  // Run computation + narrative in parallel
+  const [computation] = await Promise.all([
+    lockProtestValue(protest.id),
+    transcript ? saveAuditNarrative(protest.id, transcript) : Promise.resolve({ narrative: undefined }),
+  ])
   if (computation.error) return { error: computation.error }
 
   // Generate PDF (sets status = completed_ready + stores pdf url)

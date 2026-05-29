@@ -38,6 +38,7 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
   const [phase, setPhase] = useState<PreviewPhase>(2)
   const [showIntro, setShowIntro] = useState(true)
   const [showAuthGate, setShowAuthGate] = useState(false)
+  const [auditTranscript, setAuditTranscript] = useState('')
 
   // Initialize Zustand with property data (no protest ID or DB state)
   const init = useProtestStore((s) => s.init)
@@ -51,7 +52,8 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
     init('preview', property, 2, null)
   }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handlePreviewFinish(currentDeficits: typeof deficits) {
+  async function handlePreviewFinish(currentDeficits: typeof deficits, transcript: string) {
+    setAuditTranscript(transcript)
     const sqft = storeProperty?.total_living_area_sqft ?? property.total_living_area_sqft
     const result = await previewEquityTarget(property.id, currentDeficits, sqft)
     if (!result.error) {
@@ -200,6 +202,7 @@ export function PreviewShell({ property, mapImageUrl }: Props) {
           propertyId={property.id}
           argumentType={argumentType ?? 'equity'}
           deficits={deficits}
+          transcript={auditTranscript}
           onComplete={handleAuthComplete}
           onClose={() => setShowAuthGate(false)}
         />
