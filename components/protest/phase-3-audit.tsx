@@ -58,6 +58,8 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
   const [previewPhotos, setPreviewPhotos] = useState<Map<string, string[]>>(new Map())
   // Preview mode only: Supabase storage paths, keyed by preview deficit ID
   const [previewPhotoStoragePaths, setPreviewPhotoStoragePaths] = useState<Map<string, string[]>>(new Map())
+  // Preview mode only: number of photo uploads currently in flight
+  const [uploadingCount, setUploadingCount] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const inlinePhotoRef = useRef<HTMLInputElement>(null)
@@ -251,7 +253,8 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
       return next
     })
 
-    // Upload to temp Supabase storage in the background
+    // Upload to temp Supabase storage; block "Finish Audit" until complete
+    setUploadingCount((n) => n + 1)
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -265,8 +268,8 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
           return next
         })
       }
-    } catch {
-      // Photo still shows locally; it just won't appear in the PDF
+    } finally {
+      setUploadingCount((n) => n - 1)
     }
   }
 
@@ -436,18 +439,20 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
       {/* Finish Audit CTA */}
       <div className="border-t border-border py-3 flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          {auditComplete
-            ? 'All categories covered — ready to lock in your protest value.'
-            : 'Done reviewing your home? Lock in your protest value.'}
+          {uploadingCount > 0
+            ? `Uploading photo${uploadingCount > 1 ? 's' : ''}…`
+            : auditComplete
+              ? 'All categories covered — ready to lock in your protest value.'
+              : 'Done reviewing your home? Lock in your protest value.'}
         </p>
         <button
           type="button"
           onClick={handleFinishAudit}
-          disabled={isLoading || locking}
+          disabled={isLoading || locking || uploadingCount > 0}
           className={[
             'rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ease-out shrink-0 whitespace-nowrap',
             'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.97] disabled:opacity-40',
-            auditComplete ? 'ring-2 ring-primary ring-offset-2' : '',
+            auditComplete && uploadingCount === 0 ? 'ring-2 ring-primary ring-offset-2' : '',
           ].join(' ')}
         >
           {locking ? 'Computing…' : 'Finish Audit →'}
