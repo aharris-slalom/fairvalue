@@ -104,8 +104,8 @@ const s = StyleSheet.create({
   // ── VALUE TABLE ─────────────────────────────────────────────────────────────
   tRow:      { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.border, paddingVertical: 8, paddingHorizontal: 6 },
   tRowAlt:   { backgroundColor: C.alt },
-  tLabel:    { flex: 1, fontSize: 9.5, color: C.text },
-  tSub:      { flex: 1, fontSize: 8, color: C.muted, marginTop: 2 },
+  tLabel:    { fontSize: 9.5, color: C.text },
+  tSub:      { fontSize: 8, color: C.muted, marginTop: 2 },
   tVal:      { fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: C.text, textAlign: 'right' },
   tHighlight:{ flexDirection: 'row', backgroundColor: C.blue50, borderWidth: 1, borderColor: C.blue200, borderRadius: 4, paddingVertical: 10, paddingHorizontal: 8, marginTop: 6 },
   tHLabel:   { flex: 1, fontSize: 11, fontFamily: 'Helvetica-Bold', color: C.navy },
