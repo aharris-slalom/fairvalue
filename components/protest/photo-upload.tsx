@@ -68,7 +68,6 @@ export function PhotoUpload({ deficitId, userId, protestId }: Props) {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFile}
         disabled={uploading}

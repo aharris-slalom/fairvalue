@@ -490,7 +490,6 @@ export function Phase3Audit({ protestId, property, userId, existingDeficits = []
               ref={inlinePhotoRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleInlinePhoto}
               disabled={attachingPhoto}
