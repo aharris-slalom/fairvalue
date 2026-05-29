@@ -2,6 +2,7 @@
 
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createElement } from 'react'
+import sharp from 'sharp'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { EvidencePacket, type EvidencePhoto } from '@/components/pdf/evidence-packet'
@@ -19,13 +20,6 @@ function median(values: number[]): number {
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
-function mimeTypeFromPath(path: string): string {
-  const ext = path.split('.').pop()?.toLowerCase() ?? ''
-  if (ext === 'png') return 'image/png'
-  if (ext === 'gif') return 'image/gif'
-  if (ext === 'webp') return 'image/webp'
-  return 'image/jpeg'
-}
 
 const EXHIBIT_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -77,8 +71,9 @@ async function fetchPhotos(
       if (!res.ok) continue
 
       const buffer = Buffer.from(await res.arrayBuffer())
-      const mime = mimeTypeFromPath(att.storage_path)
-      const dataUri = `data:${mime};base64,${buffer.toString('base64')}`
+      // Convert to JPEG so @react-pdf/renderer can embed any format (HEIC, WEBP, etc.)
+      const jpegBuffer = await sharp(buffer).jpeg({ quality: 85 }).toBuffer()
+      const dataUri = `data:image/jpeg;base64,${jpegBuffer.toString('base64')}`
 
       const label = EXHIBIT_LABELS[i] ?? `${i + 1}`
       const uploadedAt = new Date(att.uploaded_at).toUTCString()
