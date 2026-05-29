@@ -77,7 +77,7 @@ export function PhotoUpload({ deficitId, userId, protestId }: Props) {
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         aria-label={uploading ? 'Uploading photo' : 'Add photo evidence'}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-background/80 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 hover:border-primary/50 active:scale-[0.97] transition-all duration-150 disabled:opacity-50"
       >
         {uploading ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />

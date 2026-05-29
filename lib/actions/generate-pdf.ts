@@ -61,18 +61,29 @@ async function fetchPhotos(
 
     try {
       // Generate a short-lived signed URL to fetch the image
-      const { data: signed } = await supabaseAdmin.storage
+      const { data: signed, error: signedError } = await supabaseAdmin.storage
         .from('evidence-photos')
-        .createSignedUrl(att.storage_path, 60)
+        .createSignedUrl(att.storage_path, 300)
 
-      if (!signed?.signedUrl) continue
+      if (signedError || !signed?.signedUrl) {
+        console.error('[fetchPhotos] signed URL error for', att.storage_path, signedError?.message)
+        continue
+      }
 
       const res = await fetch(signed.signedUrl)
-      if (!res.ok) continue
+      if (!res.ok) {
+        console.error('[fetchPhotos] fetch failed for', att.storage_path, res.status)
+        continue
+      }
 
       const buffer = Buffer.from(await res.arrayBuffer())
-      // Convert to JPEG so @react-pdf/renderer can embed any format (HEIC, WEBP, etc.)
-      const jpegBuffer = await sharp(buffer).rotate().jpeg({ quality: 85 }).toBuffer()
+      // Convert to JPEG — flatten alpha channel first so PNG/WEBP with transparency
+      // don't produce a black or broken background in JPEG output.
+      const jpegBuffer = await sharp(buffer)
+        .rotate()
+        .flatten({ background: '#ffffff' })
+        .jpeg({ quality: 85 })
+        .toBuffer()
       const dataUri = `data:image/jpeg;base64,${jpegBuffer.toString('base64')}`
 
       const label = EXHIBIT_LABELS[i] ?? `${i + 1}`
@@ -86,8 +97,8 @@ async function fetchPhotos(
         uploadedAt,
         dataUri,
       })
-    } catch {
-      // Skip photos that fail to fetch — don't abort the whole packet
+    } catch (err) {
+      console.error('[fetchPhotos] processing error for', att.storage_path, err)
     }
   }
 
