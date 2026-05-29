@@ -76,19 +76,24 @@ export async function POST(request: Request) {
 
   const systemPrompt = buildAuditSystemPrompt(property, resolvedArgumentType)
 
+  console.log(`[chat] protestId=${protestId ?? 'none'} mode=${mode ?? 'auth'} isPreview=${isPreview} msgCount=${messages.length}`)
+
   try {
     const result = streamText({
       model: anthropic('claude-sonnet-4-6'),
-      system: {
-        role: 'system',
-        content: systemPrompt,
-        providerOptions: {
-          anthropic: { cacheControl: { type: 'ephemeral' } },
-        },
-      },
+      system: systemPrompt,
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 500,
       stopWhen: stepCountIs(20),
+      onStepFinish: ({ toolCalls, toolResults, finishReason }) => {
+        console.log(`[chat] step finish — reason=${finishReason} toolCalls=${toolCalls.length} toolResults=${toolResults.length}`)
+        for (const tc of toolCalls) {
+          console.log(`[chat] tool call: ${tc.toolName}`, JSON.stringify(tc.input).slice(0, 200))
+        }
+        for (const tr of toolResults) {
+          console.log(`[chat] tool result: ${tr.toolName}`, JSON.stringify(tr.output).slice(0, 200))
+        }
+      },
       tools: {
         signal_audit_complete: tool({
           description: 'Signal that the home condition audit is complete — all major categories have been covered. Call this once, after going through all 8 categories.',

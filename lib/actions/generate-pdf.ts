@@ -53,6 +53,7 @@ async function fetchPhotos(
     console.error('[fetchPhotos] query error:', attachError.message)
     return []
   }
+  console.log(`[fetchPhotos] deficitIds=${deficitIds.length} attachments=${attachments?.length ?? 0}`)
   if (!attachments || attachments.length === 0) return []
 
   const relevant = attachments
@@ -134,11 +135,14 @@ export async function generateEvidencePacket(
   }
 
   // Fetch deficits (with id for photo lookup) — use admin client to avoid RLS auth edge cases
-  const { data: deficits } = await supabaseAdmin
+  const { data: deficits, error: deficitsError } = await supabaseAdmin
     .from('property_deficits')
     .select('id, category, user_description, estimated_cost_to_cure')
     .eq('protest_id', protestId)
     .order('created_at')
+
+  const hasNarrative = !!(protest as unknown as { audit_narrative: string | null }).audit_narrative
+  console.log(`[generateEvidencePacket] protestId=${protestId} deficits=${deficits?.length ?? 0} deficitsError=${deficitsError?.message ?? 'none'} narrative=${hasNarrative ? 'yes' : 'no'}`)
 
   const deficitList = deficits ?? []
   const deficitTotal = deficitList.reduce((sum, d) => sum + d.estimated_cost_to_cure, 0)
