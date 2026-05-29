@@ -72,7 +72,7 @@ async function fetchPhotos(
 
       const buffer = Buffer.from(await res.arrayBuffer())
       // Convert to JPEG so @react-pdf/renderer can embed any format (HEIC, WEBP, etc.)
-      const jpegBuffer = await sharp(buffer).jpeg({ quality: 85 }).toBuffer()
+      const jpegBuffer = await sharp(buffer).rotate().jpeg({ quality: 85 }).toBuffer()
       const dataUri = `data:image/jpeg;base64,${jpegBuffer.toString('base64')}`
 
       const label = EXHIBIT_LABELS[i] ?? `${i + 1}`
